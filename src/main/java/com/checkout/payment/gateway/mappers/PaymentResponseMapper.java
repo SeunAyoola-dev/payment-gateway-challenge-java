@@ -27,12 +27,11 @@ public class PaymentResponseMapper {
   private static PostPaymentResponse buildResponse(
       PostPaymentRequest paymentRequest,
       PaymentStatus status) {
-    int lastFourDigits = Integer.parseInt(lastFourDigits(paymentRequest.getCardNumber()));
     PostPaymentResponse response = new PostPaymentResponse();
 
     response.setId(UUID.randomUUID());
     response.setStatus(status);
-    response.setCardNumberLastFour(lastFourDigits);
+    response.setCardNumberLastFour(lastFourDigits(paymentRequest.getCardNumber()));
     response.setExpiryMonth(paymentRequest.getExpiryMonth());
     response.setExpiryYear(paymentRequest.getExpiryYear());
     response.setCurrency(paymentRequest.getCurrency());
