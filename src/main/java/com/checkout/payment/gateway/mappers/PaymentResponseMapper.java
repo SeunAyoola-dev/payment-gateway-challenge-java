@@ -12,8 +12,14 @@ public class PaymentResponseMapper {
       BankPaymentResponse bankResponse,
       PostPaymentRequest paymentRequest) {
 
-    PaymentStatus status = bankResponse.isAuthorized() ? PaymentStatus.AUTHORIZED : PaymentStatus.DECLINED;
+    PaymentStatus status;
 
+    if (bankResponse.isValidated()) {
+      status =
+          bankResponse.isAuthorized() ? PaymentStatus.AUTHORIZED : PaymentStatus.DECLINED;
+    } else {
+      status = PaymentStatus.REJECTED;
+    }
     int lastFourDigits = Integer.parseInt(lastFourDigits(paymentRequest.getCardNumber()));
 
     PostPaymentResponse response = new PostPaymentResponse();

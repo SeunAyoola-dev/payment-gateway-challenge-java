@@ -5,13 +5,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.checkout.payment.gateway.enums.PaymentStatus;
+import com.checkout.payment.gateway.model.PostPaymentRequest;
 import com.checkout.payment.gateway.model.PostPaymentResponse;
 import com.checkout.payment.gateway.repository.PaymentsRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -24,6 +27,8 @@ class PaymentGatewayControllerTest {
   private MockMvc mvc;
   @Autowired
   PaymentsRepository paymentsRepository;
+  @Autowired
+  private ObjectMapper objectMapper;
 
   @Test
   void whenPaymentWithIdExistThenCorrectPaymentIsReturned() throws Exception {
@@ -53,5 +58,22 @@ class PaymentGatewayControllerTest {
     mvc.perform(MockMvcRequestBuilders.get("/payment/" + UUID.randomUUID()))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.message").value("Page not found"));
+  }
+
+  @Test
+  void whenPaymentRequestIsInvalidThenRejectedStatusIsReturned() throws Exception {
+    PostPaymentRequest request = new PostPaymentRequest();
+    request.setCardNumber("12345678901234");
+    request.setExpiryMonth(1);
+    request.setExpiryYear(2020); // Expired
+    request.setCurrency("USD");
+    request.setAmount(100);
+    request.setCvv("123");
+
+    mvc.perform(MockMvcRequestBuilders.post("/payment")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.status").value(PaymentStatus.REJECTED.getName()));
   }
 }

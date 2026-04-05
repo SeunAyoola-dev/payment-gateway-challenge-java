@@ -41,21 +41,19 @@ public class PaymentGatewayService {
   }
 
   public PostPaymentResponse processPayment(PostPaymentRequest paymentRequest) {
-    paymentRequestValidator.validate(paymentRequest);
+    if (!paymentRequestValidator.validate(paymentRequest)) {
+      LOG.debug("Payment request validation failed for currency {}", paymentRequest.getCurrency());
+      var bankResponse = new BankPaymentResponse();
+      bankResponse.setValidated(false);
+      return mapToResponse(bankResponse, paymentRequest);
+    }
 
-    var bankRequest = new BankPaymentRequest(
-        paymentRequest.getCardNumber(),
-        paymentRequest.getExpiryDate(),
-        paymentRequest.getCurrency(),
-        paymentRequest.getAmount(),
-        paymentRequest.getCvv()
-    );
+    var bankRequest = new BankPaymentRequest(paymentRequest);
 
     LOG.debug("Sending payment request for currency {}", paymentRequest.getCurrency());
-
     try {
       var bankResponse = restTemplate.postForEntity(BANK_URL, bankRequest, BankPaymentResponse.class);
-      LOG.debug("Received response from bank {}", bankResponse.getBody().toString());
+      LOG.debug("Received response from bank {}", bankResponse.getBody());
 
       PostPaymentResponse response = mapToResponse(bankResponse.getBody(), paymentRequest);
       paymentsRepository.add(response);

@@ -18,11 +18,11 @@ public class BankPaymentRequest {
   @JsonProperty("cvv")
   private String cvv;
 
-  public BankPaymentRequest(String cardNumber, String expiryDate, String currency, int amount, String cvv) {
-    this.cardNumber = cardNumber;
-    this.expiryDate = expiryDate;
-    this.currency = currency;
-    this.amount = amount;
-    this.cvv = cvv;
+  public BankPaymentRequest(PostPaymentRequest paymentRequest) {
+    this.cardNumber = paymentRequest.getCardNumber();
+    this.expiryDate = paymentRequest.getExpiryDate();
+    this.currency = paymentRequest.getCurrency();
+    this.amount = paymentRequest.getAmount();
+    this.cvv = paymentRequest.getCvv();
   }
 }
