@@ -10,26 +10,30 @@ import java.util.UUID;
 import com.checkout.payment.gateway.validation.PaymentRequestValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import static com.checkout.payment.gateway.mappers.PaymentResponseMapper.mapRejected;
 import static com.checkout.payment.gateway.mappers.PaymentResponseMapper.mapToResponse;
 
 @Service
 public class PaymentGatewayService {
 
   private static final Logger LOG = LoggerFactory.getLogger(PaymentGatewayService.class);
-  private static final String BANK_URL = "http://localhost:8080/payments";
 
+  private final String bankUrl;
   private final PaymentsRepository paymentsRepository;
   private final PaymentRequestValidator paymentRequestValidator;
   private final RestTemplate restTemplate;
 
   public PaymentGatewayService(
+      @Value("${payment.bank-url}") String bankUrl,
       PaymentsRepository paymentsRepository,
       PaymentRequestValidator paymentRequestValidator,
       RestTemplate restTemplate
   ) {
+    this.bankUrl = bankUrl;
     this.paymentsRepository = paymentsRepository;
     this.paymentRequestValidator = paymentRequestValidator;
     this.restTemplate = restTemplate;
@@ -43,16 +47,14 @@ public class PaymentGatewayService {
   public PostPaymentResponse processPayment(PostPaymentRequest paymentRequest) {
     if (!paymentRequestValidator.validate(paymentRequest)) {
       LOG.debug("Payment request validation failed for currency {}", paymentRequest.getCurrency());
-      var bankResponse = new BankPaymentResponse();
-      bankResponse.setValidated(false);
-      return mapToResponse(bankResponse, paymentRequest);
+      return mapRejected(paymentRequest);
     }
 
     var bankRequest = new BankPaymentRequest(paymentRequest);
 
     LOG.debug("Sending payment request for currency {}", paymentRequest.getCurrency());
     try {
-      var bankResponse = restTemplate.postForEntity(BANK_URL, bankRequest, BankPaymentResponse.class);
+      var bankResponse = restTemplate.postForEntity(bankUrl, bankRequest, BankPaymentResponse.class);
       LOG.debug("Received response from bank {}", bankResponse.getBody());
 
       PostPaymentResponse response = mapToResponse(bankResponse.getBody(), paymentRequest);
@@ -63,7 +65,7 @@ public class PaymentGatewayService {
 
     } catch (Exception e) {
       LOG.error("Error communicating with the bank", e);
-      throw new EventProcessingException("Failed to process payment");
+      throw new EventProcessingException("Error communicating with the bank");
     }
   }
 }

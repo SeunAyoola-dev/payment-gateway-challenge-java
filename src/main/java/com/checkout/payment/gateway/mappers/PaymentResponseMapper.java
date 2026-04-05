@@ -4,24 +4,30 @@ import com.checkout.payment.gateway.enums.PaymentStatus;
 import com.checkout.payment.gateway.model.BankPaymentResponse;
 import com.checkout.payment.gateway.model.PostPaymentRequest;
 import com.checkout.payment.gateway.model.PostPaymentResponse;
+import jakarta.annotation.Nonnull;
 import java.util.UUID;
 
 public class PaymentResponseMapper {
 
+  public static PostPaymentResponse mapRejected(
+      PostPaymentRequest paymentRequest
+  ) {
+    return buildResponse(paymentRequest, PaymentStatus.REJECTED);
+  }
   public static PostPaymentResponse mapToResponse(
       BankPaymentResponse bankResponse,
       PostPaymentRequest paymentRequest) {
 
-    PaymentStatus status;
+    PaymentStatus status = bankResponse.isAuthorized() ? PaymentStatus.AUTHORIZED : PaymentStatus.DECLINED;
 
-    if (bankResponse.isValidated()) {
-      status =
-          bankResponse.isAuthorized() ? PaymentStatus.AUTHORIZED : PaymentStatus.DECLINED;
-    } else {
-      status = PaymentStatus.REJECTED;
-    }
+    return buildResponse(paymentRequest, status);
+  }
+
+  @Nonnull
+  private static PostPaymentResponse buildResponse(
+      PostPaymentRequest paymentRequest,
+      PaymentStatus status) {
     int lastFourDigits = Integer.parseInt(lastFourDigits(paymentRequest.getCardNumber()));
-
     PostPaymentResponse response = new PostPaymentResponse();
 
     response.setId(UUID.randomUUID());

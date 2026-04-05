@@ -9,18 +9,8 @@ public class BankPaymentResponse {
   @JsonProperty("authorization_code")
   private String authorizationCode;
 
-  private boolean isValidated = true;
-
   public boolean isAuthorized() {
     return authorized;
-  }
-
-  public void setValidated(boolean validated) {
-    this.isValidated = validated;
-  }
-
-  public boolean isValidated() {
-    return isValidated;
   }
 
   @Override
