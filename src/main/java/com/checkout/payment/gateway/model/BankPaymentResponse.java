@@ -13,6 +13,10 @@ public class BankPaymentResponse {
     return authorized;
   }
 
+  public void setAuthorized(boolean authorized) {
+    this.authorized = authorized;
+  }
+
   @Override
   public String toString() {
     return "BankPaymentResponse{" +

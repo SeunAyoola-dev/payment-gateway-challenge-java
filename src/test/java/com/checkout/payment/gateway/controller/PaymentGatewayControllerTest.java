@@ -39,7 +39,7 @@ class PaymentGatewayControllerTest {
     payment.setStatus(PaymentStatus.AUTHORIZED);
     payment.setExpiryMonth(12);
     payment.setExpiryYear(2024);
-    payment.setCardNumberLastFour(4321);
+    payment.setCardNumberLastFour("4321");
 
     paymentsRepository.add(payment);
 
@@ -76,4 +76,164 @@ class PaymentGatewayControllerTest {
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.status").value(PaymentStatus.REJECTED.getName()));
   }
+
+  @Test
+  void whenPaymentRequestIsValidThenAuthorizedStatusIsReturned() throws Exception {
+    PostPaymentRequest request = new PostPaymentRequest();
+    request.setCardNumber("2222405343248873");
+    request.setExpiryMonth(12);
+    request.setExpiryYear(2060);
+    request.setCurrency("USD");
+    request.setAmount(100);
+    request.setCvv("123");
+
+    mvc.perform(MockMvcRequestBuilders.post("/payment")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.status").value(PaymentStatus.AUTHORIZED.getName()));
+  }
+
+  @Test
+  void whenPaymentRequestIsValidThenDeclinedStatusIsReturned() throws Exception {
+    PostPaymentRequest request = new PostPaymentRequest();
+    request.setCardNumber("4000056655665556");
+    request.setExpiryMonth(12);
+    request.setExpiryYear(2030);
+    request.setCurrency("USD");
+    request.setAmount(100);
+    request.setCvv("123");
+
+    mvc.perform(MockMvcRequestBuilders.post("/payment")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.status").value(PaymentStatus.DECLINED.getName()));
+  }
+
+  @Test
+  void whenPaymentRequestHasMissingCardNumberThenRejectedStatusIsReturned() throws Exception {
+    PostPaymentRequest request = new PostPaymentRequest();
+    request.setExpiryMonth(12);
+    request.setExpiryYear(2030);
+    request.setCurrency("USD");
+    request.setAmount(100);
+    request.setCvv("123");
+
+    mvc.perform(MockMvcRequestBuilders.post("/payment")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.status").value(PaymentStatus.REJECTED.getName()));
+  }
+
+  @Test
+  void whenPaymentRequestHasInvalidCardNumberThenRejectedStatusIsReturned() throws Exception {
+    PostPaymentRequest request = new PostPaymentRequest();
+    request.setCardNumber("123"); // Too short
+    request.setExpiryMonth(12);
+    request.setExpiryYear(2030);
+    request.setCurrency("USD");
+    request.setAmount(100);
+    request.setCvv("123");
+
+    mvc.perform(MockMvcRequestBuilders.post("/payment")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.status").value(PaymentStatus.REJECTED.getName()));
+  }
+
+  @Test
+  void whenPaymentRequestHasInvalidExpiryMonthThenRejectedStatusIsReturned() throws Exception {
+    PostPaymentRequest request = new PostPaymentRequest();
+    request.setCardNumber("2222405343248873");
+    request.setExpiryMonth(13); // Invalid
+    request.setExpiryYear(2030);
+    request.setCurrency("USD");
+    request.setAmount(100);
+    request.setCvv("123");
+
+    mvc.perform(MockMvcRequestBuilders.post("/payment")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.status").value(PaymentStatus.REJECTED.getName()));
+  }
+
+  @Test
+  void whenPaymentRequestHasNegativeAmountThenRejectedStatusIsReturned() throws Exception {
+    PostPaymentRequest request = new PostPaymentRequest();
+    request.setCardNumber("2222405343248873");
+    request.setExpiryMonth(12);
+    request.setExpiryYear(2030);
+    request.setCurrency("USD");
+    request.setAmount(-1); // Invalid
+    request.setCvv("123");
+
+    mvc.perform(MockMvcRequestBuilders.post("/payment")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.status").value(PaymentStatus.REJECTED.getName()));
+  }
+
+  @Test
+  void whenPaymentRequestHasInvalidCvvThenRejectedStatusIsReturned() throws Exception {
+    PostPaymentRequest request = new PostPaymentRequest();
+    request.setCardNumber("2222405343248873");
+    request.setExpiryMonth(12);
+    request.setExpiryYear(2030);
+    request.setCurrency("USD");
+    request.setAmount(100);
+    request.setCvv("12"); // Too short
+
+    mvc.perform(MockMvcRequestBuilders.post("/payment")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.status").value(PaymentStatus.REJECTED.getName()));
+  }
+
+  @Test
+  void whenPaymentRequestHasUnsupportedCurrencyThenRejectedStatusIsReturned() throws Exception {
+    PostPaymentRequest request = new PostPaymentRequest();
+    request.setCardNumber("2222405343248873");
+    request.setExpiryMonth(12);
+    request.setExpiryYear(2030);
+    request.setCurrency("JPY"); // Unsupported
+    request.setAmount(100);
+    request.setCvv("123");
+
+    mvc.perform(MockMvcRequestBuilders.post("/payment")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.status").value(PaymentStatus.REJECTED.getName()));
+  }
+
+  @Test
+  void whenRetrievingPaymentWithInvalidUuidThen400IsReturned() throws Exception {
+    mvc.perform(MockMvcRequestBuilders.get("/payment/invalid-uuid"))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void whenBankReturnsErrorThen404IsReturned() throws Exception {
+    PostPaymentRequest request = new PostPaymentRequest();
+    request.setCardNumber("2222405343248870");
+    request.setExpiryMonth(12);
+    request.setExpiryYear(2030);
+    request.setCurrency("USD");
+    request.setAmount(100);
+    request.setCvv("123");
+
+    mvc.perform(MockMvcRequestBuilders.post("/payment")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.message").value("Page not found"));
+  }
+
 }
+

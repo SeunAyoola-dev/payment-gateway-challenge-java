@@ -1,12 +1,9 @@
 package com.checkout.payment.gateway.validation;
 
 import com.checkout.payment.gateway.model.PostPaymentRequest;
-import jakarta.validation.ValidationException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import java.time.YearMonth;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
 @Component
@@ -22,22 +19,34 @@ public class PaymentRequestValidator {
 
 
   public boolean validate(PostPaymentRequest postPaymentRequest) {
-    List<String> errors = new ArrayList<>();
+    return isCardNumberValid(postPaymentRequest.getCardNumber()) &&
+        isCvvValid(postPaymentRequest.getCvv()) &&
+        !isCardExpired(postPaymentRequest) &&
+        isCurrencyCodeSupported(postPaymentRequest) &&
+        isAmountValid(postPaymentRequest.getAmount());
+  }
 
-    if (isCardExpired(postPaymentRequest)) {
-      errors.add("Card has expired");
-    }
+  private boolean isCardNumberValid(String cardNumber) {
+    return cardNumber != null && cardNumber.matches("\\d{14,19}");
+  }
 
-    if (!isCurrencyCodeSupported(postPaymentRequest)) {
-      errors.add("Currency code not supported");
-    }
+  private boolean isCvvValid(String cvv) {
+    return cvv != null && cvv.matches("\\d{3,4}");
+  }
 
-    return errors.isEmpty();
+  private boolean isAmountValid(int amount) {
+    return amount > 0;
   }
 
   private boolean isCardExpired(PostPaymentRequest postPaymentRequest) {
-    YearMonth expiryDate = YearMonth.of(postPaymentRequest.getExpiryYear(),  postPaymentRequest.getExpiryMonth());
-    return expiryDate.isBefore(YearMonth.now());
+    try {
+      YearMonth expiryDate = YearMonth.of(postPaymentRequest.getExpiryYear(),
+          postPaymentRequest.getExpiryMonth());
+      return expiryDate.isBefore(YearMonth.now());
+
+    } catch (Exception e) {
+      return true;
+    }
   }
 
   private boolean isCurrencyCodeSupported(PostPaymentRequest postPaymentRequest) {
