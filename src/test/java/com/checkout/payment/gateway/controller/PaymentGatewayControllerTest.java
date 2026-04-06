@@ -130,7 +130,7 @@ class PaymentGatewayControllerTest {
   @Test
   void whenPaymentRequestHasInvalidCardNumberThenRejectedStatusIsReturned() throws Exception {
     PostPaymentRequest request = new PostPaymentRequest();
-    request.setCardNumber("123"); // Too short
+    request.setCardNumber("123");
     request.setExpiryMonth(12);
     request.setExpiryYear(2030);
     request.setCurrency("USD");
@@ -148,7 +148,7 @@ class PaymentGatewayControllerTest {
   void whenPaymentRequestHasInvalidExpiryMonthThenRejectedStatusIsReturned() throws Exception {
     PostPaymentRequest request = new PostPaymentRequest();
     request.setCardNumber("2222405343248873");
-    request.setExpiryMonth(13); // Invalid
+    request.setExpiryMonth(13);
     request.setExpiryYear(2030);
     request.setCurrency("USD");
     request.setAmount(100);
@@ -168,7 +168,7 @@ class PaymentGatewayControllerTest {
     request.setExpiryMonth(12);
     request.setExpiryYear(2030);
     request.setCurrency("USD");
-    request.setAmount(-1); // Invalid
+    request.setAmount(-1);
     request.setCvv("123");
 
     mvc.perform(MockMvcRequestBuilders.post("/payment")
@@ -186,7 +186,7 @@ class PaymentGatewayControllerTest {
     request.setExpiryYear(2030);
     request.setCurrency("USD");
     request.setAmount(100);
-    request.setCvv("12"); // Too short
+    request.setCvv("12");
 
     mvc.perform(MockMvcRequestBuilders.post("/payment")
             .contentType(MediaType.APPLICATION_JSON)
@@ -201,7 +201,7 @@ class PaymentGatewayControllerTest {
     request.setCardNumber("2222405343248873");
     request.setExpiryMonth(12);
     request.setExpiryYear(2030);
-    request.setCurrency("JPY"); // Unsupported
+    request.setCurrency("JPY");
     request.setAmount(100);
     request.setCvv("123");
 
