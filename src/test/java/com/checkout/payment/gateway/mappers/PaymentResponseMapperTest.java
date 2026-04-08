@@ -3,7 +3,7 @@ package com.checkout.payment.gateway.mappers;
 import com.checkout.payment.gateway.enums.PaymentStatus;
 import com.checkout.payment.gateway.model.BankPaymentResponse;
 import com.checkout.payment.gateway.model.PostPaymentRequest;
-import com.checkout.payment.gateway.model.PostPaymentResponse;
+import com.checkout.payment.gateway.model.PaymentResponse;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -13,7 +13,7 @@ class PaymentResponseMapperTest {
     @Test
     void whenMapRejectedThenCorrectStatusIsSet() {
         PostPaymentRequest request = createRequest();
-        PostPaymentResponse response = PaymentResponseMapper.mapRejected(request);
+        PaymentResponse response = PaymentResponseMapper.mapRejected(request);
 
         assertEquals(PaymentStatus.REJECTED, response.getStatus());
         verifyCommonFields(request, response);
@@ -25,7 +25,7 @@ class PaymentResponseMapperTest {
         BankPaymentResponse bankResponse = new BankPaymentResponse();
         bankResponse.setAuthorized(true);
 
-        PostPaymentResponse response = PaymentResponseMapper.mapToResponse(bankResponse, request);
+        PaymentResponse response = PaymentResponseMapper.mapToResponse(bankResponse, request);
 
         assertEquals(PaymentStatus.AUTHORIZED, response.getStatus());
         verifyCommonFields(request, response);
@@ -37,7 +37,7 @@ class PaymentResponseMapperTest {
         BankPaymentResponse bankResponse = new BankPaymentResponse();
         bankResponse.setAuthorized(false);
 
-        PostPaymentResponse response = PaymentResponseMapper.mapToResponse(bankResponse, request);
+        PaymentResponse response = PaymentResponseMapper.mapToResponse(bankResponse, request);
 
         assertEquals(PaymentStatus.DECLINED, response.getStatus());
         verifyCommonFields(request, response);
@@ -48,7 +48,7 @@ class PaymentResponseMapperTest {
         PostPaymentRequest request = createRequest();
         request.setCardNumber("123");
         
-        PostPaymentResponse response = PaymentResponseMapper.mapRejected(request);
+        PaymentResponse response = PaymentResponseMapper.mapRejected(request);
         
         assertEquals("123", response.getCardNumberLastFour());
     }
@@ -58,12 +58,12 @@ class PaymentResponseMapperTest {
         PostPaymentRequest request = createRequest();
         request.setCardNumber(null);
 
-        PostPaymentResponse response = PaymentResponseMapper.mapRejected(request);
+        PaymentResponse response = PaymentResponseMapper.mapRejected(request);
 
         assertNull(response.getCardNumberLastFour());
     }
 
-    private void verifyCommonFields(PostPaymentRequest request, PostPaymentResponse response) {
+    private void verifyCommonFields(PostPaymentRequest request, PaymentResponse response) {
         assertNotNull(response.getId());
         assertEquals("4567", response.getCardNumberLastFour());
         assertEquals(request.getExpiryMonth(), response.getExpiryMonth());

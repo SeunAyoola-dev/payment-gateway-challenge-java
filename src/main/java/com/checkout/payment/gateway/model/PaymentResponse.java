@@ -3,7 +3,7 @@ package com.checkout.payment.gateway.model;
 import com.checkout.payment.gateway.enums.PaymentStatus;
 import java.util.UUID;
 
-public class PostPaymentResponse {
+public class PaymentResponse {
   private UUID id;
   private PaymentStatus status;
   private String cardNumberLastFour;

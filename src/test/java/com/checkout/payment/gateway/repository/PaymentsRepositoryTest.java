@@ -1,6 +1,6 @@
 package com.checkout.payment.gateway.repository;
 
-import com.checkout.payment.gateway.model.PostPaymentResponse;
+import com.checkout.payment.gateway.model.PaymentResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -21,11 +21,11 @@ class PaymentsRepositoryTest {
     @Test
     void whenAddPaymentThenItCanBeRetrieved() {
         UUID id = UUID.randomUUID();
-        PostPaymentResponse response = new PostPaymentResponse();
+        PaymentResponse response = new PaymentResponse();
         response.setId(id);
 
         repository.add(response);
-        Optional<PostPaymentResponse> retrieved = repository.get(id);
+        Optional<PaymentResponse> retrieved = repository.get(id);
 
         assertTrue(retrieved.isPresent());
         assertEquals(response, retrieved.get());
@@ -33,7 +33,7 @@ class PaymentsRepositoryTest {
 
     @Test
     void whenGetNonExistentPaymentThenReturnEmpty() {
-        Optional<PostPaymentResponse> retrieved = repository.get(UUID.randomUUID());
+        Optional<PaymentResponse> retrieved = repository.get(UUID.randomUUID());
         assertTrue(retrieved.isEmpty());
     }
 }

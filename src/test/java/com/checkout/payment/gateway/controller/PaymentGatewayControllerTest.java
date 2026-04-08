@@ -6,7 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.checkout.payment.gateway.enums.PaymentStatus;
 import com.checkout.payment.gateway.model.PostPaymentRequest;
-import com.checkout.payment.gateway.model.PostPaymentResponse;
+import com.checkout.payment.gateway.model.PaymentResponse;
 import com.checkout.payment.gateway.repository.PaymentsRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.UUID;
@@ -32,7 +32,7 @@ class PaymentGatewayControllerTest {
 
   @Test
   void whenPaymentWithIdExistThenCorrectPaymentIsReturned() throws Exception {
-    PostPaymentResponse payment = new PostPaymentResponse();
+    PaymentResponse payment = new PaymentResponse();
     payment.setId(UUID.randomUUID());
     payment.setAmount(10);
     payment.setCurrency("USD");
@@ -219,7 +219,7 @@ class PaymentGatewayControllerTest {
   }
 
   @Test
-  void whenBankReturnsErrorThen404IsReturned() throws Exception {
+  void whenBankReturnsErrorThen503IsReturned() throws Exception {
     PostPaymentRequest request = new PostPaymentRequest();
     request.setCardNumber("2222405343248870");
     request.setExpiryMonth(12);
@@ -231,8 +231,8 @@ class PaymentGatewayControllerTest {
     mvc.perform(MockMvcRequestBuilders.post("/payment")
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isNotFound())
-        .andExpect(jsonPath("$.message").value("Page not found"));
+        .andExpect(status().is5xxServerError())
+        .andExpect(jsonPath("$.message").value("Error occurred communicating with the bank"));
   }
 
 }

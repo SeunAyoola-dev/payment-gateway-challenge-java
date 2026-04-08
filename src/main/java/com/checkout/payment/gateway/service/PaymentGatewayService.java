@@ -1,10 +1,11 @@
 package com.checkout.payment.gateway.service;
 
+import com.checkout.payment.gateway.exception.BankCommunicationException;
 import com.checkout.payment.gateway.exception.EventProcessingException;
 import com.checkout.payment.gateway.model.BankPaymentRequest;
 import com.checkout.payment.gateway.model.BankPaymentResponse;
 import com.checkout.payment.gateway.model.PostPaymentRequest;
-import com.checkout.payment.gateway.model.PostPaymentResponse;
+import com.checkout.payment.gateway.model.PaymentResponse;
 import com.checkout.payment.gateway.repository.PaymentsRepository;
 import java.util.UUID;
 import com.checkout.payment.gateway.validation.PaymentRequestValidator;
@@ -39,12 +40,12 @@ public class PaymentGatewayService {
     this.restTemplate = restTemplate;
   }
 
-  public PostPaymentResponse getPaymentById(UUID id) {
+  public PaymentResponse getPaymentById(UUID id) {
     LOG.debug("Requesting access to payment with ID {}", id);
     return paymentsRepository.get(id).orElseThrow(() -> new EventProcessingException("Invalid ID"));
   }
 
-  public PostPaymentResponse processPayment(PostPaymentRequest paymentRequest) {
+  public PaymentResponse processPayment(PostPaymentRequest paymentRequest) {
     if (!paymentRequestValidator.validate(paymentRequest)) {
       LOG.debug("Payment request validation failed for currency {}", paymentRequest.getCurrency());
       return mapRejected(paymentRequest);
@@ -57,7 +58,7 @@ public class PaymentGatewayService {
       var bankResponse = restTemplate.postForEntity(bankUrl, bankRequest, BankPaymentResponse.class);
       LOG.debug("Received response from bank {}", bankResponse.getBody());
 
-      PostPaymentResponse response = mapToResponse(bankResponse.getBody(), paymentRequest);
+      PaymentResponse response = mapToResponse(bankResponse.getBody(), paymentRequest);
       paymentsRepository.add(response);
 
       LOG.debug("Payment saved with ID {}", response.getId());
@@ -65,7 +66,7 @@ public class PaymentGatewayService {
 
     } catch (Exception e) {
       LOG.error("Error communicating with the bank", e);
-      throw new EventProcessingException("Error communicating with the bank");
+      throw new BankCommunicationException("Error communicating with the bank");
     }
   }
 }

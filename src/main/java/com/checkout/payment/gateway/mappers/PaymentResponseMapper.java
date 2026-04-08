@@ -3,18 +3,18 @@ package com.checkout.payment.gateway.mappers;
 import com.checkout.payment.gateway.enums.PaymentStatus;
 import com.checkout.payment.gateway.model.BankPaymentResponse;
 import com.checkout.payment.gateway.model.PostPaymentRequest;
-import com.checkout.payment.gateway.model.PostPaymentResponse;
+import com.checkout.payment.gateway.model.PaymentResponse;
 import jakarta.annotation.Nonnull;
 import java.util.UUID;
 
 public class PaymentResponseMapper {
 
-  public static PostPaymentResponse mapRejected(
+  public static PaymentResponse mapRejected(
       PostPaymentRequest paymentRequest
   ) {
     return buildResponse(paymentRequest, PaymentStatus.REJECTED);
   }
-  public static PostPaymentResponse mapToResponse(
+  public static PaymentResponse mapToResponse(
       BankPaymentResponse bankResponse,
       PostPaymentRequest paymentRequest) {
 
@@ -24,10 +24,10 @@ public class PaymentResponseMapper {
   }
 
   @Nonnull
-  private static PostPaymentResponse buildResponse(
+  private static PaymentResponse buildResponse(
       PostPaymentRequest paymentRequest,
       PaymentStatus status) {
-    PostPaymentResponse response = new PostPaymentResponse();
+    PaymentResponse response = new PaymentResponse();
 
     response.setId(UUID.randomUUID());
     response.setStatus(status);

@@ -19,4 +19,11 @@ public class CommonExceptionHandler {
     return new ResponseEntity<>(new ErrorResponse("Page not found"),
         HttpStatus.NOT_FOUND);
   }
+
+  @ExceptionHandler(BankCommunicationException.class)
+  public ResponseEntity<ErrorResponse> handleException(BankCommunicationException ex){
+    LOG.error("Error occurred communicating with the bank, please try again", ex);
+    return new ResponseEntity<>(new ErrorResponse("Error occurred communicating with the bank"),
+        HttpStatus.SERVICE_UNAVAILABLE);
+  }
 }

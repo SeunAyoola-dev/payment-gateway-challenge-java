@@ -1,11 +1,12 @@
 package com.checkout.payment.gateway.service;
 
 import com.checkout.payment.gateway.enums.PaymentStatus;
+import com.checkout.payment.gateway.exception.BankCommunicationException;
 import com.checkout.payment.gateway.exception.EventProcessingException;
 import com.checkout.payment.gateway.model.BankPaymentRequest;
 import com.checkout.payment.gateway.model.BankPaymentResponse;
 import com.checkout.payment.gateway.model.PostPaymentRequest;
-import com.checkout.payment.gateway.model.PostPaymentResponse;
+import com.checkout.payment.gateway.model.PaymentResponse;
 import com.checkout.payment.gateway.repository.PaymentsRepository;
 import com.checkout.payment.gateway.validation.PaymentRequestValidator;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,11 +48,11 @@ class PaymentGatewayServiceTest {
     @Test
     void whenGetPaymentByIdExistsThenReturnPayment() {
         UUID id = UUID.randomUUID();
-        PostPaymentResponse expectedResponse = new PostPaymentResponse();
+        PaymentResponse expectedResponse = new PaymentResponse();
         expectedResponse.setId(id);
         when(paymentsRepository.get(id)).thenReturn(Optional.of(expectedResponse));
 
-        PostPaymentResponse actualResponse = paymentGatewayService.getPaymentById(id);
+        PaymentResponse actualResponse = paymentGatewayService.getPaymentById(id);
 
         assertEquals(expectedResponse, actualResponse);
     }
@@ -69,7 +70,7 @@ class PaymentGatewayServiceTest {
         PostPaymentRequest request = new PostPaymentRequest();
         when(paymentRequestValidator.validate(request)).thenReturn(false);
 
-        PostPaymentResponse response = paymentGatewayService.processPayment(request);
+        PaymentResponse response = paymentGatewayService.processPayment(request);
 
         assertEquals(PaymentStatus.REJECTED, response.getStatus());
         verify(restTemplate, never()).postForEntity(anyString(), any(), any());
@@ -86,7 +87,7 @@ class PaymentGatewayServiceTest {
         when(restTemplate.postForEntity(eq(bankUrl), any(BankPaymentRequest.class), eq(BankPaymentResponse.class)))
                 .thenReturn(ResponseEntity.ok(bankResponse));
 
-        PostPaymentResponse response = paymentGatewayService.processPayment(request);
+        PaymentResponse response = paymentGatewayService.processPayment(request);
 
         assertEquals(PaymentStatus.AUTHORIZED, response.getStatus());
         verify(paymentsRepository).add(response);
@@ -103,18 +104,18 @@ class PaymentGatewayServiceTest {
         when(restTemplate.postForEntity(eq(bankUrl), any(BankPaymentRequest.class), eq(BankPaymentResponse.class)))
                 .thenReturn(ResponseEntity.ok(bankResponse));
 
-        PostPaymentResponse response = paymentGatewayService.processPayment(request);
+        PaymentResponse response = paymentGatewayService.processPayment(request);
 
         assertEquals(PaymentStatus.DECLINED, response.getStatus());
         verify(paymentsRepository).add(response);
     }
 
     @Test
-    void whenBankCallFailsThenThrowException() {
+    void whenBankCallFailsThenThrowBankCommunicationException() {
         PostPaymentRequest request = new PostPaymentRequest();
         when(paymentRequestValidator.validate(request)).thenReturn(true);
-        when(restTemplate.postForEntity(anyString(), any(), any())).thenThrow(new RuntimeException("Bank down"));
+        when(restTemplate.postForEntity(anyString(), any(), any())).thenThrow(new BankCommunicationException("Bank down"));
 
-        assertThrows(EventProcessingException.class, () -> paymentGatewayService.processPayment(request));
+        assertThrows(BankCommunicationException.class, () -> paymentGatewayService.processPayment(request));
     }
 }
